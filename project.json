@@ -1,0 +1,45 @@
+{
+  "name": "ShipLoadMeter",
+  "description": "",
+  "sourcePath": "src",
+  "outputPath": "out",
+  "builds": {
+    "main": {
+      "name": "main",
+      "slots": {
+        "core": {
+          "name": "core",
+          "type": "core"
+        },
+        "screenDashboard": {
+          "name": "screenDashboard",
+          "type": "screen"
+        },
+        "screenCargo": {
+          "name": "screenCargo",
+          "type": "screen"
+        },
+        "ledOverweight": {
+          "name": "ledOverweight",
+          "type": null
+        }
+      }
+    }
+  },
+  "targets": {
+    "development": {
+      "name": "development",
+      "handleErrors": true,
+      "minify": false
+    }
+  },
+  "libs": [
+    {
+      "id": "@wolfe-labs/Core",
+      "path": "libs\\@wolfe-labs\\Core",
+      "remote": {
+        "git": "https://github.com/wolfe-labs/DU-Core"
+      }
+    }
+  ]
+}
