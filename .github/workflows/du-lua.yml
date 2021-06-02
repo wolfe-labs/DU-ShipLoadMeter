@@ -1,0 +1,33 @@
+name: DU-Lua Automated Build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+    env:
+        NPM_CONFIG_PREFIX: "~/.npm-global"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
+      - run: npm i -g @wolfe-labs/du-luac
+      - run: mkdir -p out/development out/production
+      - run: ~/.npm-global/bin/du-lua build
+      - name: 'Latest Build (JSON)'
+        uses: actions/upload-artifact@v2
+        with:
+          name: ship-load-meter.json
+          path: out/development/main.json
+      - name: 'Latest Build (YAML)'
+        uses: actions/upload-artifact@v2
+        with:
+          name: ship-load-meter.yaml
+          path: out/development/main.yaml
