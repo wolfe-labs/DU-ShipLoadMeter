@@ -1,3 +1,5 @@
+Target_Gs = 2.0 --export: The minimum "g" value you want, affects thrust, maneuver, brakes, etc.
+
 local function getShipElementsMass ()
   local elementIds = core.getElementIdList()
   local massElements = 0
@@ -87,7 +89,8 @@ end
 local function handleTimerTick (self, timer)
   -- The target g we want our ship to limit to
   -- local gTarget = 1.75
-  local gTarget = 2.00
+  -- local gTarget = 2.00
+  local gTarget = Target_Gs
 
   -- Current total mass (including inventories)
   local massTotal = core.getConstructMass()
