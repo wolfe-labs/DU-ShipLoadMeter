@@ -15,13 +15,13 @@
           "name": "screenDashboard",
           "type": "screen"
         },
-        "screenCargo": {
-          "name": "screenCargo",
-          "type": "screen"
-        },
         "ledOverweight": {
           "name": "ledOverweight",
           "type": null
+        },
+        "screenCargo": {
+          "name": "screenCargo",
+          "type": "screen"
         }
       }
     }
