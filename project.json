@@ -11,16 +11,8 @@
           "name": "core",
           "type": "core"
         },
-        "screenDashboard": {
-          "name": "screenDashboard",
-          "type": "screen"
-        },
-        "ledOverweight": {
-          "name": "ledOverweight",
-          "type": null
-        },
-        "screenCargo": {
-          "name": "screenCargo",
+        "screenInput": {
+          "name": "screenInput",
           "type": "screen"
         }
       }
