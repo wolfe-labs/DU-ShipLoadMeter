@@ -93,7 +93,6 @@
     border-left: 2px solid currentColor;
     padding-left: 10px;
     margin-left: 10px;
-    overflow: hidden;
     white-space: nowrap;
   }
   .progress-bar .progress-remaining .label {
@@ -141,10 +140,12 @@
           </div>
         </div>
         <div class="progress-part" style="--color: #FF6F1E; --size: ' .. data.sliceDocked .. '%;">
+        ' .. ((data.sliceDocked > 5 and '
           <div class="label">
             <div class="title">Other</div>
             <div class="value">' .. data.weightDocked .. '</div>
           </div>
+        ') or '') .. '
         </div>
         <div class="progress-remaining" style="--size: ' .. data.sliceRemaining .. '%;">
           <div class="label">

@@ -21,6 +21,10 @@ If you open the "Edit Lua Parameters" screen you will be presented with some set
 
 - `Target_Gs` is the same value that many use as reference on the ship building parameters. For example, if when you are building your ship you aim for 3.0g on its stats when full, then put `3.0` on this field. This value is constant and is used to determine the maximum weight of your ship and properly display how much cargo you can fit.
 
+- `ConsiderLowLift` considers low-altitude lift into the max weight capacity calculation
+
+- `ConsiderHighLift` considers high-altitude lift into the max weight capacity calculation
+
 - `CustomBackground` turns on/off the option of having your own image as background. Please see next item for more details.
 
 - `CustomBackgroundUrl` contains the actual URL to your custom background. Please keep in mind that due to the way Lua parameters work, after setting this to an URL you will not be able to change it anymore via the Edit Lua Parameters screen. To fix this you will need to reinstall the script on your Programming Board and reconfigure it.
