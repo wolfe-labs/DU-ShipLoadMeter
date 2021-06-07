@@ -1,4 +1,4 @@
--- Debug = true --export: Enables debugging to logs
+Debug = false --export: Enables debugging to logs
 Target_Gs = 2.0 --export: The minimum "g" value you want, affects thrust, maneuver, brakes, etc.
 ConsiderLowLift = true --export: Enables or disables low-altitude lift when considering max weight
 ConsiderHighLift = true --export: Enables or disables high-altitude lift when considering max weight
@@ -54,14 +54,24 @@ local function getShipElementsMass ()
       local info = Airfoils[type][idx]
       local tags = core.getElementTagsById(id)
 
-      -- Places on right airfoil type
-      if string.find(tags, 'lateral') then
-        airfoils.lateral.lift = airfoils.lateral.lift + info.lift
-        table.insert(airfoils.lateral.elements, info)
-      end
-      if string.find(tags, 'vertical') then
-        airfoils.vertical.lift = airfoils.vertical.lift + info.lift
-        table.insert(airfoils.vertical.elements, info)
+      -- Checks if the info variable was found
+      if info then
+        -- Places on right airfoil type
+        if string.find(tags, 'lateral') then
+          airfoils.lateral.lift = airfoils.lateral.lift + info.lift
+          table.insert(airfoils.lateral.elements, info)
+        end
+        if string.find(tags, 'vertical') then
+          airfoils.vertical.lift = airfoils.vertical.lift + info.lift
+          table.insert(airfoils.vertical.elements, info)
+        end
+      elseif Debug then
+        -- Writes debug information about missing element
+        system.print('Missing Airfoil information:')
+        system.print('Element: ' .. core.getElementNameById(id))
+        system.print('Element ID: ' .. id)
+        system.print('Element Type: ' .. type)
+        system.print('Element Index: ' .. idx)
       end
     end
 
