@@ -1,7 +1,11 @@
 Debug = false --export: Enables debugging to logs
-Target_Gs = 2.0 --export: The minimum "g" value you want, affects thrust, maneuver, brakes, etc.
-ConsiderLowLift = true --export: Enables or disables low-altitude lift when considering max weight
-ConsiderHighLift = true --export: Enables or disables high-altitude lift when considering max weight
+Target_Gravity = 1.0 --export: The target gravity for all calculations (1.0 = Earth and Alioth)
+Target_ThrustAtmo = 1.0 --export: The minimum "g" value you want for atmo thrust
+Target_ThrustSpace = 2.0 --export: The minimum "g" value you want for space thrust
+Target_LiftLow = 1.4 --export: The minimum "g" value you want for low lift (vertical boosters and hover)
+Target_LiftHigh = 2.0 --export: The minimum "g" value you want for high lift (wings and vertical engines)
+Target_BrakeAtmo = 3.0 --export: The minimum "g" value you want for space brakes
+Target_BrakeSpace = 3.0 --export: The minimum "g" value you want for atmo brakes
 CustomBackground = false --export: Enables custom background image
 CustomBackgroundUrl = "none" --export: The custom background image of the screen
 
@@ -164,7 +168,7 @@ local function handleTimerTick (self, timer)
   -- The target g we want our ship to limit to
   -- local gTarget = 1.75
   -- local gTarget = 2.00
-  local gTarget = Target_Gs
+  -- local gTarget = Target_Gs
 
   -- Current total mass (including inventories)
   local massTotal = core.getConstructMass()
@@ -185,7 +189,13 @@ local function handleTimerTick (self, timer)
   local gravity = core.g()
 
   -- The target gravity our load should still be able to fly
-  local gravityTarget = gravity * gTarget
+  local gravityTarget = 9.807 * Target_Gravity
+
+  -- The max "g" value of each attribute we want to use
+  local gTargetThrustAtmo = gravityTarget * Target_ThrustAtmo
+  local gTargetThrustSpace = gravityTarget * Target_ThrustSpace
+  local gTargetLiftHigh = gravityTarget * Target_LiftHigh
+  local gTargetLiftLow = gravityTarget * Target_LiftLow
 
   -- Gets max thrust forward
   local maxThrust = getShipMaxThrust(core.getConstructOrientationForward(), 'thrust')
@@ -210,8 +220,8 @@ local function handleTimerTick (self, timer)
 
   -- Max weight by thrust
   local maxWeightThrust = {
-    atmo = maxThrust.atmo.forward / gravityTarget,
-    space = maxThrust.space.forward / gravityTarget,
+    atmo = maxThrust.atmo.forward / gTargetThrustAtmo,
+    space = maxThrust.space.forward / gTargetThrustSpace,
   }
 
   if Debug then
@@ -229,74 +239,56 @@ local function handleTimerTick (self, timer)
 
   -- We'll store the max ship weight here
   local maxWeight = {}
+  local maxLift = {}
+  
+  -- Merges max lift values
+  maxLift.atmo = {
+    forward = math.min(
+      maxLiftFwd.atmo.forward / gTargetLiftHigh,
+      maxBoost.atmo.forward / gTargetLiftLow
+    ) + (maxLiftUp.atmo.forward / math.max(gTargetLiftHigh, gTargetLiftLow)),
+    backward = math.min(
+      maxLiftFwd.atmo.backward / gTargetLiftHigh,
+      maxBoost.atmo.backward / gTargetLiftLow
+    ) + (maxLiftUp.atmo.backward / math.max(gTargetLiftHigh, gTargetLiftLow)),
+  }
+  maxLift.space = {
+    forward = math.min(
+      maxLiftUp.space.forward / gTargetLiftHigh,
+      maxBoost.space.forward / gTargetLiftLow
+    ),
+    backward = math.min(
+      maxLiftUp.space.backward / gTargetLiftHigh,
+      maxBoost.space.backward / gTargetLiftLow
+    ),
+  }
 
-  -- Are we considering any lift property?
-  if ConsiderHighLift or ConsiderLowLift then
-    local maxLift = {}
-    
-    -- Merges max lift vectors if needed
-    if ConsiderHighLift and ConsiderLowLift then
-      maxLift.atmo = {
-        forward = math.min(maxLiftFwd.atmo.forward, maxBoost.atmo.forward) + maxLiftUp.atmo.forward,
-        backward = math.min(maxLiftFwd.atmo.backward, maxBoost.atmo.backward) + maxLiftUp.atmo.backward,
-      }
-      maxLift.space = {
-        forward = math.min(maxLiftUp.space.forward, maxBoost.space.forward),
-        backward = math.min(maxLiftUp.space.backward, maxBoost.space.backward),
-      }
-    -- In case only low-alt lift is needed
-    elseif ConsiderLowLift then
-      maxLift.atmo = {
-        forward = maxBoost.atmo.forward + maxLiftUp.atmo.forward,
-        backward = maxBoost.atmo.backward + maxLiftUp.atmo.backward,
-      }
-      maxLift.space = {
-        forward = maxBoost.space.forward,
-        backward = maxBoost.space.backward,
-      }
-    -- In case only high-alt lift is needed
-    else
-      maxLift.atmo = {
-        forward = maxLiftUp.atmo.forward + maxLiftFwd.atmo.forward,
-        backward = maxLiftUp.atmo.backward + maxLiftFwd.atmo.backward,
-      }
-      maxLift.space = {
-        forward = maxLiftUp.space.forward,
-        backward = maxLiftUp.space.backward,
-      }
-    end
+  -- Max weight by lift
+  local maxWeightLift = {
+    atmo = maxLift.atmo.forward,
+    space = maxLift.space.forward,
+  }
 
-    -- Max weight by lift
-    local maxWeightLift = {
-      atmo = maxLift.atmo.forward / gravityTarget,
-      space = maxLift.space.forward / gravityTarget,
-    }
-
-    if Debug then
-      system.print('------------------')
-      system.print('Lift calculations:')
-      system.print('------ ATMO ------')
-      system.print('-> Upward Engines: ' .. getNewtonReading(maxLiftUp.atmo.forward))
-      system.print('-> High-alt: ' .. getNewtonReading(maxLiftFwd.atmo.forward))
-      system.print('-> Low-alt: ' .. getNewtonReading(maxBoost.atmo.forward))
-      system.print('-> Safe Lift: ' .. getNewtonReading(maxWeightLift.atmo * gravityTarget))
-      system.print('-> Safe Lift Mass: ' .. getWeightReading(maxWeightLift.atmo))
-      system.print('------ SPACE -----')
-      system.print('-> Upward Engines: ' .. getNewtonReading(maxLiftUp.space.forward))
-      system.print('-> High-alt: ' .. getNewtonReading(maxLiftFwd.space.forward))
-      system.print('-> Low-alt: ' .. getNewtonReading(maxBoost.space.forward))
-      system.print('-> Safe Lift: ' .. getNewtonReading(maxWeightLift.space * gravityTarget))
-      system.print('-> Safe Lift Mass: ' .. getWeightReading(maxWeightLift.space))
-    end
-
-    -- Actual max weight calculation
-    maxWeight.atmo = math.min(maxWeightThrust.atmo, maxWeightLift.atmo)
-    maxWeight.space = maxWeightThrust.space
-  else
-    -- Only considers thrust
-    maxWeight.atmo = maxWeightThrust.atmo
-    maxWeight.space = maxWeightThrust.space
+  if Debug then
+    system.print('------------------')
+    system.print('Lift calculations:')
+    system.print('------ ATMO ------')
+    system.print('-> Upward Engines: ' .. getNewtonReading(maxLiftUp.atmo.forward))
+    system.print('-> High-alt: ' .. getNewtonReading(maxLiftFwd.atmo.forward))
+    system.print('-> Low-alt: ' .. getNewtonReading(maxBoost.atmo.forward))
+    system.print('-> Safe Lift: ' .. getNewtonReading(maxWeightLift.atmo * gravityTarget))
+    system.print('-> Safe Lift Mass: ' .. getWeightReading(maxWeightLift.atmo))
+    system.print('------ SPACE -----')
+    system.print('-> Upward Engines: ' .. getNewtonReading(maxLiftUp.space.forward))
+    system.print('-> High-alt: ' .. getNewtonReading(maxLiftFwd.space.forward))
+    system.print('-> Low-alt: ' .. getNewtonReading(maxBoost.space.forward))
+    system.print('-> Safe Lift: ' .. getNewtonReading(maxWeightLift.space * gravityTarget))
+    system.print('-> Safe Lift Mass: ' .. getWeightReading(maxWeightLift.space))
   end
+
+  -- Actual max weight calculation
+  maxWeight.atmo = math.min(maxWeightThrust.atmo, maxWeightLift.atmo)
+  maxWeight.space = maxWeightThrust.space
 
   if Debug then
     system.print('------------------')
@@ -367,7 +359,7 @@ local function handleTimerTick (self, timer)
 
   render({
     gravity = getGravityReading(gravity),
-    gTarget = getGravityReading(gTarget, 'g'),
+    gTarget = getGravityReading(Target_Gravity, 'g'),
     weightCurrent = getWeightReading(massTotal),
     weightExceeding = getWeightReading(weightExceeding),
     weightTotal = getWeightReading(weightTotal),
